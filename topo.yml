@@ -1,0 +1,53 @@
+name: route 
+
+topology:
+  defaults:
+    kind: cisco_iol
+  kinds:
+    cisco_iol:
+      image: vrnetlab/cisco_iol:17.15.01
+      startup-config: configs/__clabNodeName__.partial.cfg
+    juniper_vsrx:
+      image: vrnetlab/juniper_vsrx:23.2R2.21
+      startup-config: configs/__clabNodeName__.partial.cfg
+
+  nodes:
+    vSRX-1:
+      kind: juniper_vsrx
+      mgmt-ipv4: 172.20.20.21
+    vSRX-2:
+      kind: juniper_vsrx
+      mgmt-ipv4: 172.20.20.22
+      stages:
+        create:
+          wait-for:
+            - node: vSRX-1
+              stage: healthy
+    vr111:
+      mgmt-ipv4: 172.20.20.11
+      stages:
+        create:
+          wait-for:
+            - node: vSRX-2
+              stage: healthy
+    vr112:
+      mgmt-ipv4: 172.20.20.12
+      stages:
+        create:
+          wait-for:
+            - node: vSRX-2
+              stage: healthy
+    Internet:
+      mgmt-ipv4: 172.20.20.13
+      stages:
+        create:
+          wait-for:
+            - node: vSRX-2
+              stage: healthy
+  links:
+    - endpoints: ["vSRX-1:eth2", "vSRX-2:eth2"]
+    - endpoints: ["vSRX-1:eth3", "vSRX-2:eth3"]
+    - endpoints: ["vSRX-1:eth4", "Internet:e0/1"]
+    - endpoints: ["vSRX-2:eth4", "Internet:e0/2"]
+    - endpoints: ["vSRX-1:eth5", "vr111:e0/1"]
+    - endpoints: ["vSRX-2:eth5", "vr112:e0/1"]
